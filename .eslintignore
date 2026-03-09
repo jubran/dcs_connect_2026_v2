@@ -1,0 +1,13 @@
+// .eslintignore
+build/
+dist/
+public/
+out/
+node_modules/
+.next/
+*.config.js
+*.config.ts
+src/reportWebVitals.*
+src/service-worker.*
+src/serviceWorkerRegistration.*
+src/setupTests.*

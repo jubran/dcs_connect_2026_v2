@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <script>
+        async function testRoute(route) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `Testing ${route}...`;
+            
+            try {
+                const response = await fetch(`/api/index.php?route=${route}`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `<pre>${route}: ${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `${route} Error: ${error.message}`;
+            }
+        }
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `Testing login...`;
+            
+            try {
+                const response = await fetch('/api/index.php?route=fetchAuth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        user_name: '86718',
+                        password: 'admin'
+                    })
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `<pre>Login: ${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `Login Error: ${error.message}`;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>API Routes Test</h1>
+    
+    <h2>GET Routes:</h2>
+    <button onclick="testRoute('getUnitStatus')">getUnitStatus</button>
+    <button onclick="testRoute('getCOTPStatus')">getCOTPStatus</button>
+    <button onclick="testRoute('getFUStatus')">getFUStatus</button>
+    <button onclick="testRoute('getFT6Status')">getFT6Status</button>
+    <button onclick="testRoute('getTankStatus')">getTankStatus</button>
+    <button onclick="testRoute('events')">events</button>
+    
+    <h2>POST Routes:</h2>
+    <button onclick="testLogin()">Login (fetchAuth)</button>
+    
+    <h2>Result:</h2>
+    <div id="result" style="border:1px solid #ccc; padding:10px; min-height:100px;"></div>
+</body>
+</html>
+

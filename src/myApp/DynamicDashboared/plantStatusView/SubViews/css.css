@@ -1,0 +1,28 @@
+.cardAll {
+  position: relative;
+  overflow: hidden;
+  min-height: 65px;
+  min-width: 80px;
+}
+
+.cardAll::after {
+  content: "";
+  position: absolute;
+  top: var(--shine-top, 0%);
+  left: var(--shine-left, -100%);
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: rotate(var(--shine-rotate, 0deg));
+  transition: all 0.6s ease;
+}
+
+.cardAll:hover::after {
+  left: var(--shine-end-left, 100%);
+  top: var(--shine-end-top, 0%);
+}

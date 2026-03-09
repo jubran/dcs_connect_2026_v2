@@ -1,0 +1,72 @@
+/* scrollbar */
+@import "simplebar-react/dist/simplebar.min.css";
+@font-face {
+  font-family: "GE-SS-Two-Medium";
+  src:
+    url("/src/assets/fonts/GE_SS_Two_Medium.otf"),
+    url("/src/assets/fonts/GE_SS_Two_Medium.otf") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "GE-SS-Two-Medium";
+  src: local("Calibri");
+  font-weight: normal;
+  font-style: normal;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "GE-SS-Two-Light";
+  src:
+    url("/src/assets/fonts/GE_SS_Two_Light.otf"),
+    url("/src/assets/fonts/GE_SS_Two_Light.otf") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "GE-SS-Two-Light";
+  src: local("Calibri");
+  font-weight: normal;
+  font-style: normal;
+  unicode-range: U+30-39;
+}
+
+/* تطبيق Arial على جميع الحقول مع استثناء العناصر العربية */
+input,
+textarea,
+select,
+.languages,
+.MuiInputBase-input,
+.MuiSelect-selected,
+li {
+  font-family: "GE-SS-Two-Medium", Arial, sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* استثناء صريح للحقول العربية */
+[dir="rtl"],
+input[dir="rtl"],
+.custom-textarea,
+.custom-textarea textarea,
+.custom-textarea input,
+.custom-text li,
+textarea[dir="rtl"],
+select[dir="rtl"],
+.MuiInputBase-input[dir="rtl"],
+.MuiSelect-selecte[dir="rtl"] {
+  font-family: inherit !important;
+}
+
+.system-ui-font {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
