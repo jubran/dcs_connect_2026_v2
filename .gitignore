@@ -22,7 +22,6 @@ dist-ssr
 private_tools
 .env
 database/dcsVite.sqlite3
-database/dcsVite.sqbpro
 uploads/
 public/dcsVite.sqlite3
 dist1
