@@ -64,7 +64,8 @@ $sql = "
                 location GLOB 'GT[0-9][0-9]'
                 AND CAST(SUBSTR(location, 3) AS INTEGER) BETWEEN 16 AND 30
             )
-            OR location GLOB 'BS[-#][0-9]*'
+            OR location LIKE 'BS#%'
+            OR location LIKE 'BS-%'
             OR location GLOB 'DE-[0-9]*'
         )
         AND status1 IS NOT NULL 
@@ -79,7 +80,8 @@ $sql = "
             e.location GLOB 'GT[0-9][0-9]'
             AND CAST(SUBSTR(e.location, 3) AS INTEGER) BETWEEN 16 AND 30
         )
-        OR e.location GLOB 'BS[-#][0-9]*'
+        OR e.location LIKE 'BS#%'
+        OR e.location LIKE 'BS-%'
         OR e.location GLOB 'DE-[0-9]*'
     )
     AND e.status1 IS NOT NULL 
@@ -88,7 +90,7 @@ $sql = "
     ORDER BY 
         CASE 
             WHEN e.location GLOB 'GT*' THEN 1 
-            WHEN e.location GLOB 'BS*' THEN 2
+            WHEN e.location LIKE 'BS%' THEN 2
             ELSE 3
         END,
 
@@ -96,7 +98,7 @@ $sql = "
             WHEN e.location GLOB 'GT*'
                 THEN CAST(SUBSTR(e.location, 3) AS INTEGER)
 
-            WHEN e.location GLOB 'BS*'
+            WHEN e.location LIKE 'BS%'
                 THEN CAST(
                     REPLACE(
                         REPLACE(e.location, 'BS-', ''),

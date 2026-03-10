@@ -13,6 +13,11 @@ const ENTITY_OPERATIONS_MAP = {
   bsde: API_ROUTES.units.operations,
 };
 
+// Map frontend entityType → backend entityType accepted by server
+const ENTITY_TYPE_SERVER_MAP = {
+  noneStatus: 'nonestatus',
+};
+
 const ENTITY_OPERATIONS_DELETE_MAP = {
   units: API_ROUTES.units.delete,
   tank: API_ROUTES.tanks.delete,
@@ -49,8 +54,12 @@ class OperationService {
       ? operations.update(payload?.id)
       : operations.create();
 
+    // Translate frontend entityType to the value the server accepts
+    const serverEntityType = ENTITY_TYPE_SERVER_MAP[entityType] ?? entityType;
+    const serverPayload = { ...payload, entityType: serverEntityType };
+
     try {
-      const response = await this.api.post(url, payload);
+      const response = await this.api.post(url, serverPayload);
       return response.data;
     } catch (error) {
       const data = error.response?.data;

@@ -6,7 +6,7 @@ require_once __DIR__ . '/BaseAuthController.php';
 
 class OperationController extends BaseAuthController
 {
-    private const ALLOWED_TYPES = ['units', 'tank', 'transformer', 'nonestatus'];
+    private const ALLOWED_TYPES = ['units', 'tank', 'transformer', 'nonestatus', 'bsde'];
 
     // ─── CREATE ───────────────────────────────────────────────────────────────
 
@@ -27,6 +27,7 @@ class OperationController extends BaseAuthController
 
         switch ($entityType) {
             case 'units':
+            case 'bsde':
                 self::unitOperation($input);
                 break;
             case 'tank':
@@ -148,19 +149,22 @@ class OperationController extends BaseAuthController
 
         $user = self::getCurrentUser();
 
+        $entityTypeToStore = strtolower(trim($input['entityType'] ?? 'units'));
+
         $stmt = $conn->prepare("
             INSERT INTO events (
                 username1, date1, time1, location, entityType,
                 status1, shutdownType, shutdownReason, foReason,
                 sapOrder, action, note, hyd, flame, fsnl, synch, gsu, ir
             ) VALUES (
-                :username1, :date1, :time1, :location, 'units',
+                :username1, :date1, :time1, :location, :entityType,
                 :status1, :shutdownType, :shutdownReason, :foReason,
                 :sapOrder, :action, :note, :hyd, :flame, :fsnl, :synch, :gsu, :ir
             )
         ");
 
         $stmt->execute([
+            ':entityType'     => $entityTypeToStore,
             ':username1'      => self::s($user['username']),
             ':date1'          => $input['eventDate'],
             ':time1'          => $input['eventTime'],

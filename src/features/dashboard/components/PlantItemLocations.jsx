@@ -32,7 +32,7 @@ export const STATUS_CONFIG = {
   },
   fsnl: {
     gradient:
-      "linear-gradient(135deg, #fbbf24 0%, #f59e0b 25%, #d97706 75%, #b45309 100%)",
+     "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 25%, #1e40af 75%, #1e3a8a 100%)",
     // icon: "/assets/icons/dcs/arrow-down.svg"
   },
   load: {
@@ -42,7 +42,7 @@ export const STATUS_CONFIG = {
   },
   ready: {
     gradient:
-      "linear-gradient(135deg, #10b981 0%, #059669 25%, #047857 75%, #065f46 100%)",
+     "linear-gradient(135deg, #6b7280 0%, #4b5563 25%, #374151 75%, #1f2937 100%)",
     // icon: "/assets/icons/dcs/3-dots.svg"
   },
   SETTLING: {
