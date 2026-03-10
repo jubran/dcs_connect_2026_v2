@@ -11,22 +11,16 @@ node_modules
 dist
 dist-ssr
 *.local
-.dynamicForms
 .claude
-.claude-old
-.continue.vite
+.claude
 .continue
 .vite
 .vs
 .vscode
-private_tools
 .env
 database/dcsVite.sqlite3
-uploads/
-public/dcsVite.sqlite3
-dist1
+database/dcsVite.sqbpro
 .els
-scripts
 
 # Editor directories and files
 .vscode/*
