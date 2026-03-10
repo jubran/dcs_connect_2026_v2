@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(powershell.exe -Command \"New-Item -ItemType Directory -Force -Path ''D:\\\\web\\\\dcs_2026_v2\\\\src\\\\myApp_v2\\\\utils''; Copy-Item -Path ''D:\\\\web\\\\dcs_2026_v2\\\\src\\\\myApp\\\\utils\\\\*'' -Destination ''D:\\\\web\\\\dcs_2026_v2\\\\src\\\\myApp_v2\\\\utils\\\\'' -Recurse\")",
-      "Bash(powershell.exe -Command \"New-Item -ItemType Directory -Force -Path ''D:\\\\web\\\\dcs_2026_v2\\\\src\\\\myApp_v2\\\\utils''\")",
-      "Bash(powershell.exe -Command \"Copy-Item -Path ''D:\\\\web\\\\dcs_2026_v2\\\\src\\\\myApp\\\\utils\\\\*'' -Destination ''D:\\\\web\\\\dcs_2026_v2\\\\src\\\\myApp_v2\\\\utils\\\\'' -Recurse\")"
-    ]
-  }
-}
