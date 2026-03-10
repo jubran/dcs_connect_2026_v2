@@ -12,17 +12,18 @@ dist
 dist-ssr
 *.local
 .dynamicForms
-# .claude
+.claude
 .claude-old
 .continue.vite
-# .continue
-# .vite
+.continue
+.vite
 .vs
 .vscode
 private_tools
-# .env
-# database/dcsVite.sqlite3
-# uploads/
+.env
+database/dcsVite.sqlite3
+database/dcsVite.sqbpro
+uploads/
 public/dcsVite.sqlite3
 dist1
 .els
