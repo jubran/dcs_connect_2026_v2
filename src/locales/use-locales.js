@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-import { localStorageGetItem } from "src/myApp/utils/storage-available";
+import { localStorageGetItem } from "src/shared/utils/storage-available";
 
 import { useSettingsContext } from "src/components/settings";
 

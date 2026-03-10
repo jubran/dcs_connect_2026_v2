@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 
-import { fDate } from "src/myApp/utils/format-time";
+import { fDate } from "src/shared/utils/format-time";
 
 import { shortDateLabel } from "./utils";
 

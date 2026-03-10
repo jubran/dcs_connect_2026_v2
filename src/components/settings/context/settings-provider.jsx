@@ -2,9 +2,9 @@ import PropTypes from "prop-types";
 import isEqual from "lodash/isEqual";
 import { useMemo, useState, useEffect, useCallback } from "react";
 
-import { useLocalStorage } from "src/myApp/hooks/use-local-storage";
+import { useLocalStorage } from "src/shared/hooks/use-local-storage";
 
-import { localStorageGetItem } from "src/myApp/utils/storage-available";
+import { localStorageGetItem } from "src/shared/utils/storage-available";
 
 import { SettingsContext } from "./settings-context";
 

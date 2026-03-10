@@ -2,39 +2,30 @@
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../helpers.php';
-require_once __DIR__ . '/../cors.php';
 
 class BaseAuthController
 {
-    // المتغيرات الخاصة بالمستخدم الحالي
     protected static ?array $currentUser = null;
 
-    /**
-     * تحقق من التوكن وتخزين بيانات المستخدم
-     */
+    // ─── Authentication ───────────────────────────────────────────────────────
+
     public static function authenticate(): void
     {
         $token = self::getBearerToken();
-        
+
         if (!$token) {
-            // Log debug info
-            error_log("Token extraction failed. Request method: " . $_SERVER['REQUEST_METHOD']);
-            error_log("Headers: " . json_encode(getallheaders() ?? []));
-            error_log("_SERVER keys with AUTH: " . json_encode(array_filter(array_keys($_SERVER), function($k) { return strpos($k, 'AUTH') !== false; })));
-            
-            self::errorResponse(401, 'Token missing. Please provide Authorization header with Bearer token', [], 'TOKEN_MISSING');
+            self::errorResponse(401, 'Authorization token missing', [], 'TOKEN_MISSING');
         }
-        
-        self::$currentUser = self::validateJWT($token);
-        
-        if (!self::$currentUser) {
+
+        $payload = decodeJWT($token, JWT_SECRET);
+
+        if (!$payload) {
             self::errorResponse(401, 'Invalid or expired token', [], 'INVALID_TOKEN');
         }
+
+        self::$currentUser = $payload;
     }
 
-    /**
-     * الحصول على بيانات المستخدم الحالي
-     */
     public static function getCurrentUser(): array
     {
         if (!self::$currentUser) {
@@ -43,119 +34,47 @@ class BaseAuthController
         return self::$currentUser;
     }
 
-    /**
-     * استخراج التوكن من الـ Header بعدة طرق
-     */
+    public static function requireRole(string $requiredRole): void
+    {
+        $user = self::getCurrentUser();
+        if (($user['u_role'] ?? 'user') !== $requiredRole) {
+            self::errorResponse(403, 'Insufficient permissions', [
+                'required' => $requiredRole,
+                'current'  => $user['u_role'] ?? 'user',
+            ], 'FORBIDDEN');
+        }
+    }
+
+    // ─── Token Extraction ─────────────────────────────────────────────────────
+
     protected static function getBearerToken(): ?string
     {
-        $authHeader = '';
-        
-        // الطريقة 1: استخدام getallheaders() - الأكثر موثوقية
-        try {
-            if (function_exists('getallheaders')) {
-                $headers = getallheaders();
-                if (is_array($headers)) {
-                    // ابحث بحساسية الحالة المختلفة
-                    foreach ($headers as $key => $value) {
-                        if (strtolower($key) === 'authorization') {
-                            $authHeader = $value;
-                            break;
-                        }
-                    }
+        // 1. getallheaders()
+        if (function_exists('getallheaders')) {
+            foreach ((getallheaders() ?: []) as $key => $value) {
+                if (strtolower($key) === 'authorization') {
+                    if (preg_match('/Bearer\s+(\S+)/i', $value, $m)) return $m[1];
                 }
             }
-        } catch (Exception $e) {
-            error_log("Error in getallheaders(): " . $e->getMessage());
         }
-        
-        // الطريقة 2: البحث في $_SERVER
-        if (!$authHeader && isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+
+        // 2. $_SERVER
+        foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $key) {
+            if (!empty($_SERVER[$key])) {
+                if (preg_match('/Bearer\s+(\S+)/i', $_SERVER[$key], $m)) return $m[1];
+            }
         }
-        
-        // الطريقة 3: للخوادم التي تقوم بتعديل Authorization header
-        if (!$authHeader && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
-        }
-        
-        // الطريقة 4: البحث في x-access-token header (بديل شائع)
-        if (!$authHeader && isset($_SERVER['HTTP_X_ACCESS_TOKEN'])) {
+
+        // 3. x-access-token
+        if (!empty($_SERVER['HTTP_X_ACCESS_TOKEN'])) {
             return $_SERVER['HTTP_X_ACCESS_TOKEN'];
         }
-        
-        // البحث عن Bearer Token في Authorization header
-        if (!empty($authHeader)) {
-            // التعامل مع صيغ مختلفة للـ header
-            if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $matches)) {
-                return trim($matches[1]);
-            }
-            // في حالة كان التوكن مباشرة بدون "Bearer"
-            if (preg_match('/^[A-Za-z0-9_\-\.]+$/', trim($authHeader))) {
-                return trim($authHeader);
-            }
-        }
-        
-        // يمكن أيضاً البحث في الـ Query String (للتطوير فقط)
-        if (isset($_GET['token']) && defined('DEV_MODE') && DEV_MODE) {
-            return $_GET['token'];
-        }
-        
+
         return null;
     }
 
-    /**
-     * التحقق من صحة JWT
-     */
-    protected static function validateJWT(string $token): ?array
-    {
-        try {
-            // تأكد من وجود JWT_SECRET في config.php
-            if (!defined('JWT_SECRET')) {
-                error_log('JWT_SECRET not defined in config.php');
-                return null;
-            }
+    // ─── Error Response ───────────────────────────────────────────────────────
 
-            $parts = explode('.', $token);
-            if (count($parts) !== 3) {
-                return null;
-            }
-
-            // Decode header
-            $header = json_decode(base64_decode($parts[0]), true);
-            if (!$header || ($header['alg'] ?? null) !== 'HS256') {
-                return null;
-            }
-
-            // Decode payload
-            $payload = json_decode(base64_decode($parts[1]), true);
-            if (!$payload) {
-                return null;
-            }
-
-            // Verify signature
-            $signature = hash_hmac('sha256', $parts[0] . '.' . $parts[1], JWT_SECRET, true);
-            $expectedSignature = base64_encode($signature);
-            $expectedSignature = rtrim(strtr($expectedSignature, '+/', '-_'), '=');
-
-            if (!hash_equals($expectedSignature, $parts[2])) {
-                return null;
-            }
-
-            // Check expiration
-            if (isset($payload['exp']) && $payload['exp'] < time()) {
-                return null;
-            }
-
-            return $payload;
-        } catch (Exception $e) {
-            error_log('JWT validation error: ' . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * دالة الرد على الأخطاء
-     */
     protected static function errorResponse(
         int $status,
         string $message,
@@ -166,17 +85,74 @@ class BaseAuthController
         header('Content-Type: application/json; charset=utf-8');
 
         $response = [
-            'success' => false,
-            'message' => $message,
-            'errors'  => $errors,
-            'code'    => $code,
-            'timestamp' => date('Y-m-d H:i:s')
+            'success'   => false,
+            'message'   => $message,
+            'code'      => $code,
+            'timestamp' => date('Y-m-d H:i:s'),
         ];
 
+        if (!empty($errors)) {
+            $response['errors'] = $errors;
+        }
+
         if ($status >= 500) {
-            error_log("Error [$code]: $message - " . json_encode($errors));
+            error_log("[$code] $message");
         }
 
         exit(json_encode($response));
+    }
+
+    // ─── Input Helpers ────────────────────────────────────────────────────────
+
+    protected static function getJsonInput(): array
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            self::errorResponse(400, 'Invalid JSON: ' . json_last_error_msg(), [], 'INVALID_JSON');
+        }
+        return $input ?? [];
+    }
+
+    protected static function requireMethod(string $method): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method)) {
+            self::errorResponse(405, 'Method not allowed', [], 'METHOD_NOT_ALLOWED');
+        }
+    }
+
+    protected static function validateFields(array $input, array $rules): array
+    {
+        $errors = [];
+        foreach ($rules as $field => $type) {
+            $value = $input[$field] ?? null;
+            if ($value === null || trim((string)$value) === '') {
+                $errors[$field] = "$field is required";
+                continue;
+            }
+            switch ($type) {
+                case 'date':
+                    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value))
+                        $errors[$field] = "$field must be YYYY-MM-DD";
+                    break;
+                case 'time':
+                    if (!preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $value))
+                        $errors[$field] = "$field must be HH:MM or HH:MM:SS";
+                    break;
+                case 'int':
+                    if (!filter_var($value, FILTER_VALIDATE_INT))
+                        $errors[$field] = "$field must be integer";
+                    break;
+                case 'string':
+                    if (strlen(trim($value)) > 500)
+                        $errors[$field] = "$field is too long";
+                    break;
+            }
+        }
+        return $errors;
+    }
+
+    protected static function s(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }
 }

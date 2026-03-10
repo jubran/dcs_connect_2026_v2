@@ -4,7 +4,7 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import { useTheme } from "@mui/material/styles";
 
-import { useOffSetTop } from "src/myApp/hooks/use-off-set-top";
+import { useOffSetTop } from "src/shared/hooks/use-off-set-top";
 
 import { bgBlur } from "src/theme/css";
 

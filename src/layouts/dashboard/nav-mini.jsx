@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 
-import { useMockedUser } from "src/myApp/hooks/use-mocked-user";
+import { useMockedUser } from "src/shared/hooks/use-mocked-user";
 
 import { hideScroll } from "src/theme/css";
 

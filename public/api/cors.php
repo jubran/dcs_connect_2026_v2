@@ -1,21 +1,34 @@
 <?php
-// 📌 اسمح لـ React/Vite origin
-$allowedOrigins = [
-    'http://localhost:3030',  // React dev server
-    'http://127.0.0.1:3030',  // بديل localhost
-];
 
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (in_array($origin, $allowedOrigins)) {
-    header("Access-Control-Allow-Origin: $origin");
+$allowedOrigins = [];
+
+// في التطوير
+if (($_ENV['APP_ENV'] ?? 'production') === 'development') {
+    $allowedOrigins = [
+        'http://localhost:3030',
+        'http://127.0.0.1:3030',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+    ];
 }
 
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Access-Control-Allow-Credentials: true"); // إذا تستخدم الكوكيز
+// أضف هنا domains الإنتاج
+// $allowedOrigins[] = 'https://yourdomain.com';
 
-// ⚡ Preflight OPTIONS request
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+if (!empty($allowedOrigins) && in_array($origin, $allowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: $origin");
+} elseif (empty($allowedOrigins)) {
+    // إنتاج بدون CORS (نفس الدومين)
+    // لا نضيف header
+}
+
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Credentials: true');
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
+    http_response_code(204);
     exit;
 }

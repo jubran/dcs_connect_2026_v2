@@ -14,8 +14,8 @@ import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 
-import { useBoolean } from "src/myApp/hooks/use-boolean";
-import { useResponsive } from "src/myApp/hooks/use-responsive";
+import { useBoolean } from "src/shared/hooks/use-boolean";
+import { useResponsive } from "src/shared/hooks/use-responsive";
 
 import { _notifications } from "src/_mock";
 

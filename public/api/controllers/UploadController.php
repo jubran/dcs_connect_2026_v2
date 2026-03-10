@@ -1,228 +1,184 @@
 <?php
-header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../helpers.php';
-require_once __DIR__ . '/../cors.php';
 require_once __DIR__ . '/BaseAuthController.php';
 
 class UploadController extends BaseAuthController
 {
-    /**
-     * رفع الملفات
-     */
+    private const UPLOAD_DIR       = __DIR__ . '/../../uploads/operation/forms/';
+    private const ALLOWED_EXT      = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif'];
+    private const MAX_FILE_SIZE    = 10 * 1024 * 1024; // 10MB
+
+    // ─── Upload ───────────────────────────────────────────────────────────────
+
     public static function uploadFiles(): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            self::errorResponse(
-                405,
-                'Method not allowed',
-                [],
-                'METHOD_NOT_ALLOWED'
-            );
-        }
-
-        // تحقق من التوكن
+        self::requireMethod('POST');
         self::authenticate();
 
-        $targetDir = __DIR__ . "/../uploads/operation/forms/";
-        
-        // Create directory if not exists
-        if (!file_exists($targetDir)) {
-            if (!mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
-                self::errorResponse(
-                    500,
-                    'Failed to create upload directory',
-                    [],
-                    'DIRECTORY_CREATION_FAILED'
-                );
-            }
+        $dir = self::UPLOAD_DIR;
+        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+            self::errorResponse(500, 'Cannot create upload directory', [], 'DIR_FAILED');
         }
-
-        // Check if directory is writable
-        if (!is_writable($targetDir)) {
-            self::errorResponse(
-                500,
-                'Upload directory is not writable',
-                [],
-                'DIRECTORY_NOT_WRITABLE'
-            );
+        if (!is_writable($dir)) {
+            self::errorResponse(500, 'Upload directory not writable', [], 'NOT_WRITABLE');
         }
-
         if (!isset($_FILES['files'])) {
-            self::errorResponse(
-                400,
-                'No files uploaded',
-                [],
-                'NO_FILES'
+            self::errorResponse(400, 'No files provided', [], 'NO_FILES');
+        }
+
+        $results = [];
+        foreach ($_FILES['files']['name'] as $i => $name) {
+            $results[] = self::processUpload(
+                $name,
+                $_FILES['files']['tmp_name'][$i],
+                $_FILES['files']['error'][$i],
+                $_FILES['files']['size'][$i],
+                $dir
             );
         }
 
-        $allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif'];
-        $maxFileSize = 10 * 1024 * 1024; // 10MB
-        $response = [];
-
-        foreach ($_FILES['files']['name'] as $key => $name) {
-            $tmpName = $_FILES['files']['tmp_name'][$key];
-            $error = $_FILES['files']['error'][$key];
-            $size = $_FILES['files']['size'][$key];
-
-            // Check for upload errors
-            if ($error !== UPLOAD_ERR_OK) {
-                $response[] = [
-                    'name' => htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
-                    'status' => 'error',
-                    'message' => self::getUploadError($error)
-                ];
-                continue;
-            }
-
-            // Check file size
-            if ($size > $maxFileSize) {
-                $response[] = [
-                    'name' => htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
-                    'status' => 'error',
-                    'message' => 'File too large (max 10MB)'
-                ];
-                continue;
-            }
-
-            // Check file extension
-            $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($extension, $allowedExtensions, true)) {
-                $response[] = [
-                    'name' => htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
-                    'status' => 'error',
-                    'message' => 'File type not allowed'
-                ];
-                continue;
-            }
-
-            // Sanitize filename
-            $safeFilename = self::sanitizeFilename($name);
-            $targetFile = $targetDir . $safeFilename;
-
-            // Prevent overwriting
-            if (file_exists($targetFile)) {
-                $safeFilename = time() . '_' . $safeFilename;
-                $targetFile = $targetDir . $safeFilename;
-            }
-
-            // Move uploaded file
-            if (move_uploaded_file($tmpName, $targetFile)) {
-                $response[] = [
-                    'name' => htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
-                    'saved_as' => $safeFilename,
-                    'size' => $size,
-                    'status' => 'success',
-                    'url' => '/uploads/operation/forms/' . $safeFilename
-                ];
-            } else {
-                $response[] = [
-                    'name' => htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
-                    'status' => 'error',
-                    'message' => 'Failed to save file'
-                ];
-            }
-        }
-
-        header('Content-Type: application/json');
-        echo json_encode($response);
+        echo json_encode($results);
     }
 
-    /**
-     * قائمة الملفات
-     */
+    // ─── List ─────────────────────────────────────────────────────────────────
+
     public static function listFiles(): void
     {
-        // تحقق من التوكن
         self::authenticate();
 
-        $dir = __DIR__ . "/../uploads/operation/forms/";
-        
-        if (!file_exists($dir) || !is_dir($dir)) {
-            echo json_encode([]);
-            return;
-        }
+        $dir = self::UPLOAD_DIR;
+        if (!is_dir($dir)) { echo json_encode([]); return; }
 
         $files = [];
-        $allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif'];
-
         foreach (scandir($dir) as $file) {
-            if ($file === '.' || $file === '..') {
-                continue;
-            }
-            
+            if ($file[0] === '.') continue;
             $path = $dir . $file;
-            $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-            
-            if (!in_array($extension, $allowedExtensions, true)) {
-                continue;
-            }
-
-            if (!is_file($path)) {
-                continue;
-            }
-
+            $ext  = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if (!is_file($path) || !in_array($ext, self::ALLOWED_EXT, true)) continue;
             $files[] = [
-                "name" => htmlspecialchars($file, ENT_QUOTES, 'UTF-8'),
-                "type" => $extension,
-                "size" => filesize($path),
-                "modified" => date("Y-m-d H:i:s", filemtime($path)),
-                "url" => '/uploads/operation/forms/' . urlencode($file)
+                'name'     => htmlspecialchars($file, ENT_QUOTES, 'UTF-8'),
+                'type'     => $ext,
+                'size'     => filesize($path),
+                'modified' => date('Y-m-d H:i:s', filemtime($path)),
+                'url'      => '/uploads/operation/forms/' . rawurlencode($file),
             ];
         }
 
-        // Sort by modification date (newest first)
-        usort($files, function($a, $b) {
-            return strtotime($b['modified']) - strtotime($a['modified']);
-        });
-
-        header('Content-Type: application/json');
+        usort($files, fn($a, $b) => strtotime($b['modified']) - strtotime($a['modified']));
         echo json_encode($files);
     }
 
-    /* ====================
-       PRIVATE HELPER FUNCTIONS
-       ==================== */
+    // ─── Download ─────────────────────────────────────────────────────────────
 
-    /**
-     * الحصول على رسالة خطأ الرفع
-     */
-    private static function getUploadError(int $error): string
+    public static function downloadFile(): void
     {
-        switch ($error) {
-            case UPLOAD_ERR_INI_SIZE:
-            case UPLOAD_ERR_FORM_SIZE:
-                return 'File too large';
-            case UPLOAD_ERR_PARTIAL:
-                return 'File partially uploaded';
-            case UPLOAD_ERR_NO_FILE:
-                return 'No file uploaded';
-            case UPLOAD_ERR_NO_TMP_DIR:
-                return 'Missing temporary folder';
-            case UPLOAD_ERR_CANT_WRITE:
-                return 'Failed to write to disk';
-            case UPLOAD_ERR_EXTENSION:
-                return 'File upload stopped by extension';
-            default:
-                return 'Unknown upload error';
+        self::authenticate();
+
+        $filename = basename($_GET['filename'] ?? '');
+        if (!$filename) {
+            self::errorResponse(400, 'Filename required', [], 'MISSING_FILENAME');
         }
+
+        $path = self::UPLOAD_DIR . $filename;
+        if (!file_exists($path) || !is_file($path)) {
+            self::errorResponse(404, 'File not found', [], 'FILE_NOT_FOUND');
+        }
+
+        $ext  = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (!in_array($ext, self::ALLOWED_EXT, true)) {
+            self::errorResponse(403, 'File type not allowed', [], 'FORBIDDEN_TYPE');
+        }
+
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . addslashes($filename) . '"');
+        header('Content-Length: ' . filesize($path));
+        readfile($path);
+        exit;
     }
 
-    /**
-     * تنظيف أسماء الملفات
-     */
-    private static function sanitizeFilename(string $filename): string
+    // ─── Delete ───────────────────────────────────────────────────────────────
+
+    public static function deleteFile(): void
     {
-        $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
-        $filename = preg_replace('/_+/', '_', $filename);
-        $filename = trim($filename, '_');
-        
-        if (empty($filename)) {
-            $filename = 'file_' . time();
+        self::requireMethod('POST');
+        self::authenticate();
+
+        $input    = self::getJsonInput();
+        $filename = basename($input['filename'] ?? '');
+
+        if (!$filename) {
+            self::errorResponse(400, 'Filename required', [], 'MISSING_FILENAME');
         }
-        
-        return $filename;
+
+        $path = self::UPLOAD_DIR . $filename;
+        if (!file_exists($path)) {
+            self::errorResponse(404, 'File not found', [], 'FILE_NOT_FOUND');
+        }
+
+        if (!unlink($path)) {
+            self::errorResponse(500, 'Could not delete file', [], 'DELETE_FAILED');
+        }
+
+        echo json_encode(['success' => true, 'message' => "Deleted: $filename"]);
+    }
+
+    // ─── Private ──────────────────────────────────────────────────────────────
+
+    private static function processUpload(string $name, string $tmp, int $error, int $size, string $dir): array
+    {
+        $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+
+        if ($error !== UPLOAD_ERR_OK) {
+            return ['name' => $safeName, 'status' => 'error', 'message' => self::uploadErrorMsg($error)];
+        }
+        if ($size > self::MAX_FILE_SIZE) {
+            return ['name' => $safeName, 'status' => 'error', 'message' => 'File too large (max 10MB)'];
+        }
+
+        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        if (!in_array($ext, self::ALLOWED_EXT, true)) {
+            return ['name' => $safeName, 'status' => 'error', 'message' => 'File type not allowed'];
+        }
+
+        $saved = self::sanitizeFilename($name);
+        $path  = $dir . $saved;
+        if (file_exists($path)) {
+            $saved = time() . '_' . $saved;
+            $path  = $dir . $saved;
+        }
+
+        if (!move_uploaded_file($tmp, $path)) {
+            return ['name' => $safeName, 'status' => 'error', 'message' => 'Failed to save file'];
+        }
+
+        return [
+            'name'     => $safeName,
+            'saved_as' => $saved,
+            'size'     => $size,
+            'status'   => 'success',
+            'url'      => '/uploads/operation/forms/' . rawurlencode($saved),
+        ];
+    }
+
+    private static function sanitizeFilename(string $name): string
+    {
+        $name = preg_replace('/[^a-zA-Z0-9._-]/', '_', $name);
+        $name = preg_replace('/_+/', '_', $name);
+        $name = trim($name, '_');
+        return $name ?: 'file_' . time();
+    }
+
+    private static function uploadErrorMsg(int $code): string
+    {
+        return match ($code) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'File too large',
+            UPLOAD_ERR_PARTIAL  => 'File partially uploaded',
+            UPLOAD_ERR_NO_FILE  => 'No file uploaded',
+            UPLOAD_ERR_NO_TMP_DIR => 'No temp directory',
+            UPLOAD_ERR_CANT_WRITE => 'Cannot write to disk',
+            default => 'Unknown upload error',
+        };
     }
 }

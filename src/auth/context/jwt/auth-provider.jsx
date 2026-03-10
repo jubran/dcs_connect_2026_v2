@@ -6,7 +6,7 @@ import { AuthContext } from "./auth-context";
 import { setSession } from "./utils";
 import { isLoggingOut, setIsLoggingOut } from "src/auth/hooks/auth-flag";
 import { apiBaseUrl } from "src/config-global";
-import API_ROUTES from "src/myApp/utils/API_ROUTES";
+import API_ROUTES from "src/shared/utils/API_ROUTES";
 
 const initialState = {
   user: null,

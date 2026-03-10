@@ -1,5 +1,5 @@
 import { useContext, useMemo } from "react";
-import axios from "src/myApp/utils/axios";
+import axios from "src/shared/utils/axios";
 import { paths } from "src/routes/paths";
 import { AuthContext } from "./auth-context";
 // ----------------------------------------------------------------------

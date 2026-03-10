@@ -9,7 +9,7 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemButton from "@mui/material/ListItemButton";
 
-import { fToNow } from "src/myApp/utils/format-time";
+import { fToNow } from "src/shared/utils/format-time";
 
 import Label from "src/components/label";
 import FileThumbnail from "src/components/file-thumbnail";
@@ -138,7 +138,7 @@ export default function NotificationItem({ notification }) {
       }}
     >
       <FileThumbnail
-        file="http://10.220.5.66:2410/httpsdesign-suriname-2015.mp3"
+       file="/httpsdesign-suriname-2015.mp3"
         sx={{ width: 40, height: 40 }}
       />
 

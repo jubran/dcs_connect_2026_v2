@@ -5,7 +5,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha, useTheme, keyframes } from "@mui/material/styles";
 
-import { useResponsive } from "src/myApp/hooks/use-responsive";
+import { useResponsive } from "src/shared/hooks/use-responsive";
 
 import { bgGradient } from "src/theme/css";
 

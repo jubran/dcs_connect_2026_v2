@@ -4,7 +4,7 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import { useTheme } from "@mui/material/styles";
 
-import { useMockedUser } from "src/myApp/hooks/use-mocked-user";
+import { useMockedUser } from "src/shared/hooks/use-mocked-user";
 
 import { bgBlur } from "src/theme/css";
 

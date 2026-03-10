@@ -2,7 +2,7 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
-import { localStorageGetItem } from "src/myApp/utils/storage-available";
+import { localStorageGetItem } from "src/shared/utils/storage-available";
 
 import { defaultLang } from "./config-lang";
 import translationEn from "./langs/en.json";

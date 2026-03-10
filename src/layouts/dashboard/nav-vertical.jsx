@@ -7,8 +7,8 @@ import Drawer from "@mui/material/Drawer";
 
 import { usePathname } from "src/routes/hooks";
 
-import { useResponsive } from "src/myApp/hooks/use-responsive";
-import { useMockedUser } from "src/myApp/hooks/use-mocked-user";
+import { useResponsive } from "src/shared/hooks/use-responsive";
+import { useMockedUser } from "src/shared/hooks/use-mocked-user";
 
 import Scrollbar from "src/components/scrollbar";
 import { NavSectionVertical } from "src/components/nav-section";

@@ -1,0 +1,16 @@
+{
+  "allowDangerouslySkipPermissions": false,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -Command \"npx prettier --write '**/*.{js,jsx,css}' 2>$null\""
+          }
+        ]
+      }
+    ]
+  }
+}

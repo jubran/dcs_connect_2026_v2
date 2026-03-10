@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { useTheme } from "@mui/material/styles";
 import IconButton from "@mui/material/IconButton";
 
-import { useResponsive } from "src/myApp/hooks/use-responsive";
+import { useResponsive } from "src/shared/hooks/use-responsive";
 
 import { bgBlur } from "src/theme/css";
 

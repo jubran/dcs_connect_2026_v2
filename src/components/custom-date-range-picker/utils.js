@@ -1,6 +1,6 @@
 import { getYear, isSameDay, isSameMonth } from "date-fns";
 
-import { fDate } from "src/myApp/utils/format-time";
+import { fDate } from "src/shared/utils/format-time";
 
 // ----------------------------------------------------------------------
 

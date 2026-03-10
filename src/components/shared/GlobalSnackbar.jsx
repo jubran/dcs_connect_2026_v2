@@ -1,7 +1,7 @@
 // src/components/shared/GlobalSnackbar.jsx
 import React from "react";
-import SharedSnackbar from "src/myApp/components/SharedSnackbar";
-import { useSnackbar } from "src/myApp/contexts/SnackbarContext";
+import SharedSnackbar from "src/shared/components/SharedSnackbar";
+import { useSnackbar } from "src/shared/contexts/SnackbarContext";
 
 const GlobalSnackbar = () => {
   const { snackbar, handleClose } = useSnackbar();

@@ -1,4 +1,4 @@
-import { flattenArray } from "src/myApp/utils/flatten-array";
+import { flattenArray } from "src/shared/utils/flatten-array";
 
 export function getAllItems({ data }) {
   const reduceItems = data

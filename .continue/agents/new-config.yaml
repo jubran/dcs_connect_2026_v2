@@ -1,0 +1,67 @@
+name: Ollama Multi-Model Config
+version: 1.0.0
+schema: v1
+
+models:
+  - name: GPT-OSS 20B (Ollama)
+    provider: ollama
+    model: gpt-oss:20b
+    apiBase: http://localhost:11434
+
+  - name: DeepSeek Coder V2
+    provider: ollama
+    model: deepseek-coder-v2
+    apiBase: http://localhost:11434
+
+  - name: Llama 3.1 8B
+    provider: ollama
+    model: llama3.1:8b
+    apiBase: http://localhost:11434
+
+  - name: Mistral 7B
+    provider: ollama
+    model: mistral-7b
+    apiBase: http://localhost:11434
+
+  - name: GLM 4.6V Flash (LM Studio)
+    provider: lmstudio
+    model: zai-org/glm-4.6v-flash
+    apiBase: http://localhost:1234/v1
+    
+
+  - name: GPT OSS 20B (LM Studio)
+    provider: lmstudio
+    model: openai/gpt-oss-20b
+    apiBase: http://localhost:1234/v1
+
+defaultModel: GPT OSS 20B (LM Studio)
+
+tabAutocompleteModel:
+  provider: ollama
+  model: gpt-oss:20b
+  apiBase: http://localhost:11434
+
+contextProviders:
+  - name: code
+  - name: docs
+  - name: diff
+  - name: terminal
+  - name: problems
+  - name: folder
+  - name: codebase
+
+slashCommands:
+  - name: share
+    description: Export chat to markdown
+  - name: cmd
+    description: Generate a shell command
+  - name: commit
+    description: Generate a git commit message
+
+embeddingsProvider:
+  provider: ollama
+  model: nomic-embed-text
+  apiBase: http://localhost:11434
+
+reranker:
+  name: free-trial

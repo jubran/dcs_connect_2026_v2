@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 import Box from "@mui/material/Box";
 
-import { useResponsive } from "src/myApp/hooks/use-responsive";
+import { useResponsive } from "src/shared/hooks/use-responsive";
 
 import { varContainer } from "./variants";
 

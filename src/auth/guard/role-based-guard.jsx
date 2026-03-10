@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 
-import { useMockedUser } from "src/myApp/hooks/use-mocked-user";
+import { useMockedUser } from "src/shared/hooks/use-mocked-user";
 
 import { ForbiddenIllustration } from "src/assets/illustrations";
 

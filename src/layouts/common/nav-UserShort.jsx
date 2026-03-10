@@ -3,7 +3,7 @@ import Stack from "@mui/material/Stack";
 import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 
-import { useMockedUser } from "src/myApp/hooks/use-mocked-user";
+import { useMockedUser } from "src/shared/hooks/use-mocked-user";
 
 import { useAuthUser } from "src/auth/context/jwt/utils";
 import { Button } from "@mui/material";

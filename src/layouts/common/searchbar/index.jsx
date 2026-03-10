@@ -22,9 +22,9 @@ import SearchNotFound from "src/components/search-not-found";
 import ResultItem from "./result-item";
 import { useNavData } from "../../dashboard/config-navigation";
 import { applyFilter, groupedData, getAllItems } from "./utils";
-import { useBoolean } from "src/myApp/hooks/use-boolean";
-import { useResponsive } from "src/myApp/hooks/use-responsive";
-import { useEventListener } from "src/myApp/hooks/use-event-listener";
+import { useBoolean } from "src/shared/hooks/use-boolean";
+import { useResponsive } from "src/shared/hooks/use-responsive";
+import { useEventListener } from "src/shared/hooks/use-event-listener";
 
 // ----------------------------------------------------------------------
 

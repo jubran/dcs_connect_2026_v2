@@ -2,8 +2,8 @@ import PropTypes from "prop-types";
 
 import Box from "@mui/material/Box";
 
-import { useBoolean } from "src/myApp/hooks/use-boolean";
-import { useResponsive } from "src/myApp/hooks/use-responsive";
+import { useBoolean } from "src/shared/hooks/use-boolean";
+import { useResponsive } from "src/shared/hooks/use-responsive";
 
 import { useSettingsContext } from "src/components/settings";
 

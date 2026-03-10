@@ -6,8 +6,8 @@ import Toolbar from "@mui/material/Toolbar";
 import { useTheme } from "@mui/material/styles";
 import IconButton from "@mui/material/IconButton";
 
-import { useOffSetTop } from "src/myApp/hooks/use-off-set-top";
-import { useResponsive } from "src/myApp/hooks/use-responsive";
+import { useOffSetTop } from "src/shared/hooks/use-off-set-top";
+import { useResponsive } from "src/shared/hooks/use-responsive";
 
 import { bgBlur } from "src/theme/css";
 
@@ -22,7 +22,7 @@ import AccountPopover from "../common/account-popover";
 import LanguagePopover from "../common/language-popover";
 import NotificationsPopover from "../common/notifications-popover";
 
-import NotificationsManager from "src/myApp/DynamicNotifications/views/NotificationsManager";
+import NotificationsManager from "src/features/notifications/NotificationsPage";
 
 // ----------------------------------------------------------------------
 

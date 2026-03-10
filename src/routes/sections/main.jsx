@@ -3,12 +3,10 @@ import { Outlet } from "react-router-dom";
 
 import CompactLayout from "src/layouts/compact";
 
-// ----------------------------------------------------------------------
+// ── Pages ──────────────────────────────────────────────────────────────
+const Page404 = lazy(() => import("src/features/error/404"));
 
-const Page404 = lazy(() => import("src/myApp/pages/404"));
-
-// ----------------------------------------------------------------------
-
+// ── Routes ─────────────────────────────────────────────────────────────
 export const mainRoutes = [
   {
     element: (

@@ -3,17 +3,13 @@ import { Outlet } from "react-router-dom";
 
 import { GuestGuard } from "src/auth/guard";
 import AuthClassicLayout from "src/layouts/auth/classic";
-
 import { SplashScreen } from "src/components/loading-screen";
 
-// ----------------------------------------------------------------------
+// ── Pages ──────────────────────────────────────────────────────────────
+const JwtLoginPage    = lazy(() => import("src/features/auth/LoginPage"));
+const JwtRegisterPage = lazy(() => import("src/features/auth/RegisterPage"));
 
-// JWT
-const JwtLoginPage = lazy(() => import("src/myApp/pages/auth/jwt/login"));
-const JwtRegisterPage = lazy(() => import("src/myApp/pages/auth/jwt/register"));
-
-// ----------------------------------------------------------------------
-
+// ── Routes ─────────────────────────────────────────────────────────────
 const authJwt = {
   path: "jwt",
   element: (
