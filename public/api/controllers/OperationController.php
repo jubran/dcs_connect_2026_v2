@@ -61,6 +61,7 @@ class OperationController extends BaseAuthController
 
         switch ($entityType) {
             case 'units':
+            case 'bsde':
                 self::updateUnit($id, $input);
                 break;
             case 'tank':
@@ -246,8 +247,8 @@ class OperationController extends BaseAuthController
 
         $user = self::getCurrentUser();
 
-        // تحقق أن الحدث موجود
-        $check = $conn->prepare("SELECT id FROM events WHERE id = :id AND entityType = 'units'");
+        // تحقق أن الحدث موجود (units أو bsde)
+        $check = $conn->prepare("SELECT id FROM events WHERE id = :id AND entityType IN ('units', 'bsde')");
         $check->execute([':id' => $id]);
         if (!$check->fetch()) {
             self::errorResponse(404, 'Unit event not found', [], 'NOT_FOUND');

@@ -21,7 +21,7 @@ dist-ssr
 database/dcsVite.sqlite3
 database/dcsVite.sqbpro
 .els
-
+dist2
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
