@@ -27,9 +27,20 @@
   "my_group": "إدارة مجموعتي",
   "operation_dev": "إدارة قسم التشغيل",
   "web_site": "إدارة البوابة الإلكترونية",
+  "database_management": "إدارة قاعدة البيانات",
+  "integration_management": "إدارة التكاملات",
+  "notification_management": "إدارة الإشعارات",
+  "isms_management": "إدارة نظام أمن المعلومات",
+  "users_management": "إدارة المستخدمين",
   "dcs_dashboard": "ملحقات البوابة",
   "general_notes": "إضافة ملاحظات عامة",
   "private_discation": "تحسين البوابة",
+  "files": "إدارة الملفات",
+  "file_manager": "مدير الملفات",
+  "file_upload": "رفع الملفات",
+  "create_notification": "إنشاء إشعار",
+  "display_notifications": "عرض الإشعارات",
+  "notification_control_panel": "لوحة تحكم الإشعارات",
   "demo": {
     "title": "Arabic"
   }

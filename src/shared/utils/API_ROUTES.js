@@ -98,12 +98,35 @@ const API_ROUTES = {
     },
   },
 
+  notifications: {
+    getAll:  () => API_BASE + "getNotifications",
+    create:  () => API_BASE + "createNotification",
+    update:  (id = "") => id ? `${API_BASE}updateNotification&id=${id}` : API_BASE + "updateNotification",
+    delete:  (id = "") => id ? `${API_BASE}deleteNotification&id=${id}` : API_BASE + "deleteNotification",
+    markRead: () => API_BASE + "markNotificationRead",
+    markAllRead: () => API_BASE + "markAllNotificationsRead",
+    stats: () => API_BASE + "getNotificationStats",
+  },
+
   files: {
-    upload: () => API_BASE + "uploadOperationFiles",
-    list: () => API_BASE + "listOperationFiles",
+    upload:       () => API_BASE + "uploadOperationFiles",
+    list:         () => API_BASE + "listOperationFiles",
     download: (filename) =>
       `${API_BASE}downloadOperationFile&filename=${encodeURIComponent(filename)}`,
-    delete: () => API_BASE + "deleteOperationFile",
+    delete:       () => API_BASE + "deleteOperationFile",
+    // folder operations
+    createFolder: () => API_BASE + "createFolder",
+    listFolders:  () => API_BASE + "listFolders",
+    deleteFolder: () => API_BASE + "deleteFolder",
+    renameFolder: () => API_BASE + "renameFolder",
+    // file manager
+    listAll:      (folder = "") => folder
+      ? `${API_BASE}listAllFiles&folder=${encodeURIComponent(folder)}`
+      : API_BASE + "listAllFiles",
+    rename:       () => API_BASE + "renameFile",
+    move:         () => API_BASE + "moveFile",
+    star:         () => API_BASE + "starFile",
+    stats:        () => API_BASE + "getStorageStats",
   },
 
   data: {

@@ -48,11 +48,30 @@ const ROUTES = [
     'createTransformerOperation'=> ['TransformerController',  'createTransOperation'],
     'updateTransformerOperation'=> ['TransformerController',  'updateTransOperation'],
 
-    // FILES - ✅ كان FileController (غير موجود) → UploadController
+    // NOTIFICATIONS
+    'createNotification'        => ['NotificationController', 'createNotification'],
+    'getNotifications'          => ['NotificationController', 'getNotifications'],
+    'updateNotification'        => ['NotificationController', 'updateNotification'],
+    'deleteNotification'        => ['NotificationController', 'deleteNotification'],
+    'markNotificationRead'      => ['NotificationController', 'markNotificationRead'],
+    'markAllNotificationsRead'  => ['NotificationController', 'markAllNotificationsRead'],
+    'getNotificationStats'      => ['NotificationController', 'getNotificationStats'],
+
+    // FILES
     'uploadOperationFiles'  => ['UploadController', 'uploadFiles'],
     'listOperationFiles'    => ['UploadController', 'listFiles'],
+    'listAllFiles'          => ['UploadController', 'listAllFiles'],
     'downloadOperationFile' => ['UploadController', 'downloadFile'],
     'deleteOperationFile'   => ['UploadController', 'deleteFile'],
+    'renameFile'            => ['UploadController', 'renameFile'],
+    'moveFile'              => ['UploadController', 'moveFile'],
+    'starFile'              => ['UploadController', 'starFile'],
+    'getStorageStats'       => ['UploadController', 'getStorageStats'],
+    // FOLDERS
+    'listFolders'           => ['UploadController', 'listFolders'],
+    'createFolder'          => ['UploadController', 'createFolder'],
+    'deleteFolder'          => ['UploadController', 'deleteFolder'],
+    'renameFolder'          => ['UploadController', 'renameFolder'],
 ];
 
 // ─── استخراج الـ Route ───────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import EmptyContent from "src/components/empty-content/empty-content";
 
 import {
@@ -25,13 +25,29 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  InputAdornment,
+  TextField,
+  Select,
+  FormControl,
   TablePagination,
   Switch,
   FormControlLabel,
+  Tooltip,
   Box,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import SvgColor from "src/components/svg-color";
+// Inline icon replacements — no @mui/icons-material needed
+const MoreVertIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+    <circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" />
+  </svg>
+);
+const SearchIcon = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+    <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+  </svg>
+);
 
 import useSWR, { mutate } from "swr";
 import axiosInstance, { fetcher } from "src/shared/utils/axios";
@@ -40,40 +56,38 @@ import { useSnackbar } from "src/shared/contexts/SnackbarContext";
 import { buildEventsApiUrl } from "src/features/search/services/searchApi";
 import { parseTankActionSingleLine } from "src/features/operations/forms/tank/tankDataParser";
 
-// ─── Inline SVG icons (no @mui/icons-material needed) ────────────────────────
-const MoreVertIcon = () => (
-  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-    <circle cx="12" cy="5" r="2" />
-    <circle cx="12" cy="12" r="2" />
-    <circle cx="12" cy="19" r="2" />
-  </svg>
-);
-
-// ─── Status color map ─────────────────────────────────────────────────────────
-const STATUS_COLOR = {
-  "In Service": "#2e7d32",
-  load:         "#2e7d32",
-  ready:        "#2e7d32",
-  fsnl:         "#e65100",
-  "Stand By":   "#1565c0",
-  Shutdown:     "#c62828",
+// ─── Status chip helper ───────────────────────────────────────────────────────
+const STATUS_STYLES = {
+  "In Service": { bg: "#e8f5e9", color: "#2e7d32", label: "In Service" },
+  load:         { bg: "#e8f5e9", color: "#2e7d32", label: "Load" },
+  ready:        { bg: "#e8f5e9", color: "#2e7d32", label: "Ready" },
+  fsnl:         { bg: "#fff3e0", color: "#e65100", label: "FSNL" },
+  "Stand By":   { bg: "#e3f2fd", color: "#1565c0", label: "Stand By" },
+  Shutdown:     { bg: "#fce4ec", color: "#c62828", label: "Shutdown" },
 };
 
-function StatusText({ row }) {
+function StatusChip({ row }) {
   const { status1, shutdownType, foReason } = row;
-  let label = (status1 || "").toUpperCase();
+  let label = status1;
   if (status1 === "Shutdown") {
-    if (shutdownType?.trim() && foReason?.trim()) label = `${shutdownType}-${foReason}`.toUpperCase();
-    else if (shutdownType?.trim()) label = shutdownType.toUpperCase();
+    if (shutdownType?.trim() && foReason?.trim()) label = `${shutdownType}-${foReason}`;
+    else if (shutdownType?.trim()) label = shutdownType;
   }
-  const color = STATUS_COLOR[status1] || "#555";
+  const style = STATUS_STYLES[status1] || { bg: "#f5f5f5", color: "#555", label };
   return (
-    <Typography
-      variant="body2"
-      sx={{ color, fontWeight: 700, fontSize: "0.82rem", letterSpacing: 0.3 }}
-    >
-      {label}
-    </Typography>
+    <Chip
+      label={label}
+      size="small"
+      sx={{
+        bgcolor: style.bg,
+        color: style.color,
+        fontWeight: 700,
+        fontSize: "0.72rem",
+        border: `1.5px solid ${style.color}`,
+        borderRadius: "6px",
+        height: 26,
+      }}
+    />
   );
 }
 
@@ -81,28 +95,12 @@ function StatusText({ row }) {
 function DescriptionCell({ row }) {
   const { action, flame, fsnl, synch, hyd } = row;
   return (
-    <Typography variant="body2" sx={{ lineHeight: 1.5, fontSize: "0.84rem" }}>
+    <Typography variant="body2" sx={{ direction: "rtl", lineHeight: 1.4 }}>
       {action && <span>{action} </span>}
-      {flame && (
-        <Box component="span" sx={{ color: "#e65100", fontWeight: 700 }}>
-          FLAME ON {flame} RPM{" "}
-        </Box>
-      )}
-      {fsnl && (
-        <Box component="span" sx={{ color: "#1565c0", fontWeight: 700 }}>
-          FSNL AT {fsnl} HRS{" "}
-        </Box>
-      )}
-      {synch && (
-        <Box component="span" sx={{ color: "#2e7d32", fontWeight: 700 }}>
-          SYNCH AT {synch} HRS{" "}
-        </Box>
-      )}
-      {hyd && (
-        <Box component="span" sx={{ color: "#e65100", fontWeight: 700 }}>
-          {hyd}
-        </Box>
-      )}
+      {flame && <Box component="span" sx={{ color: "error.main", fontWeight: 700 }}>FLAME ON {flame} RPM </Box>}
+      {fsnl  && <Box component="span" sx={{ color: "info.main",  fontWeight: 700 }}>FSNL AT {fsnl} HRS </Box>}
+      {synch && <Box component="span" sx={{ color: "success.main", fontWeight: 700 }}>SYNCH AT {synch} HRS </Box>}
+      {hyd   && <Box component="span" sx={{ color: "error.main", fontWeight: 700 }}>{hyd}</Box>}
     </Typography>
   );
 }
@@ -111,54 +109,89 @@ function DescriptionCell({ row }) {
 function RowActionsMenu({ row, selectedRows, onDetail, onEdit, onDelete }) {
   const [anchor, setAnchor] = useState(null);
   const open = Boolean(anchor);
-  const isOnlySelected =
-    selectedRows.length === 1 && selectedRows[0]?.id === row.id;
+  const isOnlySelected = selectedRows.length === 1 && selectedRows[0]?.id === row.id;
 
   return (
     <>
-      <IconButton
-        size="small"
-        onClick={(e) => setAnchor(e.currentTarget)}
-        sx={{ color: "text.secondary" }}
-      >
-        <MoreVertIcon />
+      <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)}>
+        <MoreVertIcon fontSize="small" />
       </IconButton>
-      <Menu
-        anchorEl={anchor}
-        open={open}
-        onClose={() => setAnchor(null)}
-        PaperProps={{
-          sx: {
-            minWidth: 160,
-            borderRadius: 2,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-          },
-        }}
-      >
-        <MenuItem
-          onClick={() => { onDetail(row); setAnchor(null); }}
-          sx={{ gap: 1.5, fontSize: 14 }}
-        >
+      <Menu anchorEl={anchor} open={open} onClose={() => setAnchor(null)}
+        PaperProps={{ sx: { minWidth: 160, borderRadius: 2, boxShadow: "0 4px 16px rgba(0,0,0,0.12)" } }}>
+        <MenuItem onClick={() => { onDetail(row); setAnchor(null); }}
+          sx={{ gap: 1.5, fontSize: 14 }}>
           <SvgColor src="/assets/icons/components/ic_eye.svg" width={18} height={18} />
-          التفاصيل{selectedRows.length > 0 ? ` (${selectedRows.length})` : ""}
+          التفاصيل {selectedRows.length > 0 ? `(${selectedRows.length})` : ""}
         </MenuItem>
-        <MenuItem
-          onClick={() => { onEdit(row); setAnchor(null); }}
+        <MenuItem onClick={() => { onEdit(row); setAnchor(null); }}
           disabled={!isOnlySelected}
-          sx={{ gap: 1.5, fontSize: 14 }}
-        >
+          sx={{ gap: 1.5, fontSize: 14 }}>
           <SvgColor src="/assets/icons/components/ic_edit.svg" width={18} height={18} />
           تحديث
         </MenuItem>
-        <MenuItem
-          onClick={() => { onDelete(row); setAnchor(null); }}
-          sx={{ gap: 1.5, fontSize: 14, color: "error.main" }}
-        >
+        <MenuItem onClick={() => { onDelete(row); setAnchor(null); }}
+          sx={{ gap: 1.5, fontSize: 14, color: "error.main" }}>
           <SvgColor src="/assets/icons/components/ic_delete.svg" width={18} height={18} />
-          حذف{selectedRows.length > 0 ? ` (${selectedRows.length})` : ""}
+          حذف {selectedRows.length > 0 ? `(${selectedRows.length})` : ""}
         </MenuItem>
       </Menu>
     </>
+  );
+}
+
+// ─── Filter tabs ──────────────────────────────────────────────────────────────
+const STATUS_FILTERS = ["الكل", "In Service", "Stand By", "Shutdown", "fsnl"];
+
+function FilterTabs({ rows, activeFilter, onChange }) {
+  const counts = useMemo(() => {
+    const c = { الكل: rows.length };
+    STATUS_FILTERS.slice(1).forEach((s) => {
+      c[s] = rows.filter((r) => r.status1 === s).length;
+    });
+    return c;
+  }, [rows]);
+
+  const chipColor = (f) => {
+    if (f === "الكل") return { bg: "#111", color: "#fff" };
+    const s = STATUS_STYLES[f];
+    return s ? { bg: s.color, color: "#fff" } : { bg: "#e0e0e0", color: "#555" };
+  };
+
+  return (
+    <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+      {STATUS_FILTERS.map((f) => {
+        const active = activeFilter === f;
+        const c = chipColor(f);
+        return (
+          <Box
+            key={f}
+            onClick={() => onChange(f)}
+            sx={{
+              display: "flex", alignItems: "center", gap: 0.8, cursor: "pointer",
+              pb: 0.5,
+              borderBottom: active ? `2px solid ${f === "الكل" ? "#111" : c.bg}` : "2px solid transparent",
+              "&:hover": { opacity: 0.8 },
+            }}
+          >
+            <Chip
+              label={counts[f] ?? 0}
+              size="small"
+              sx={{
+                bgcolor: active ? c.bg : "#f0f0f0",
+                color: active ? c.color : "#555",
+                fontWeight: 700,
+                height: 22,
+                fontSize: "0.72rem",
+                minWidth: 28,
+              }}
+            />
+            <Typography variant="body2" sx={{ fontWeight: active ? 700 : 400, color: active ? "text.primary" : "text.secondary" }}>
+              {f}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Box>
   );
 }
 
@@ -168,16 +201,19 @@ export default function ShowDataGrid({ date, location, rows1 }) {
   const [openDetail, setOpenDetail] = useState(false);
   const [detailRow, setDetailRow] = useState(null);
   const [openDelete, setOpenDelete] = useState(false);
+  const [rowToDelete, setRowToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
 
-  // Pagination & density
+  // Table UI state
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("الكل");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [dense, setDense] = useState(false);
 
-  const { showError, showSuccess } = useSnackbar();
+  const { showInfo, showError, showSuccess, handleClose } = useSnackbar();
   const { data: rawData } = useSWR(
     buildEventsApiUrl({ startDate: date, location }),
     fetcher,
@@ -188,48 +224,53 @@ export default function ShowDataGrid({ date, location, rows1 }) {
     if (rawData) setRows(rawData);
   }, [rawData]);
 
-  // ── Pagination ──────────────────────────────────────────────────────────────
+  // ── Filtering ───────────────────────────────────────────────────────────────
+  const filteredRows = useMemo(() => {
+    let r = rows;
+    if (activeFilter !== "الكل") r = r.filter((row) => row.status1 === activeFilter);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      r = r.filter(
+        (row) =>
+          row.location?.toLowerCase().includes(q) ||
+          row.action?.toLowerCase().includes(q) ||
+          row.status1?.toLowerCase().includes(q) ||
+          row.date1?.toLowerCase().includes(q) ||
+          row.time1?.toLowerCase().includes(q),
+      );
+    }
+    return r;
+  }, [rows, activeFilter, search]);
+
   const pagedRows = useMemo(
-    () => rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [rows, page, rowsPerPage],
+    () => filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    [filteredRows, page, rowsPerPage],
   );
 
   // ── Selection ───────────────────────────────────────────────────────────────
   const isSelected = (id) => selectedRows.some((r) => r.id === id);
-
   const toggleRow = (row) => {
     setSelectedRows((prev) =>
-      prev.some((r) => r.id === row.id)
-        ? prev.filter((r) => r.id !== row.id)
-        : [...prev, row],
+      prev.some((r) => r.id === row.id) ? prev.filter((r) => r.id !== row.id) : [...prev, row],
     );
   };
-
   const toggleAll = () => {
     if (pagedRows.every((r) => isSelected(r.id))) {
-      setSelectedRows((prev) =>
-        prev.filter((r) => !pagedRows.find((p) => p.id === r.id)),
-      );
+      setSelectedRows((prev) => prev.filter((r) => !pagedRows.find((p) => p.id === r.id)));
     } else {
       const toAdd = pagedRows.filter((r) => !isSelected(r.id));
       setSelectedRows((prev) => [...prev, ...toAdd]);
     }
   };
-
-  const allPageSelected =
-    pagedRows.length > 0 && pagedRows.every((r) => isSelected(r.id));
-  const somePageSelected =
-    pagedRows.some((r) => isSelected(r.id)) && !allPageSelected;
+  const allPageSelected = pagedRows.length > 0 && pagedRows.every((r) => isSelected(r.id));
+  const somePageSelected = pagedRows.some((r) => isSelected(r.id)) && !allPageSelected;
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleOpenDetail = (row) => { setDetailRow(row); setOpenDetail(true); };
   const handleCloseDetail = () => { setOpenDetail(false); setDetailRow(null); };
 
   const handleOpenDelete = () => {
-    if (selectedRows.length === 0) {
-      showError("الرجاء تحديد صف واحد على الأقل للحذف");
-      return;
-    }
+    if (selectedRows.length === 0) { showError("الرجاء تحديد صف واحد على الأقل للحذف"); return; }
     setDeleteError("");
     setOpenDelete(true);
   };
@@ -240,10 +281,10 @@ export default function ShowDataGrid({ date, location, rows1 }) {
     setDeleting(true);
     setDeleteError("");
     try {
-      const response = await axiosInstance.post(
-        API_ROUTES.tanks.delete.multiple(),
-        { event_ids: selectedRows.map((r) => r.id), soft_delete: true },
-      );
+      const response = await axiosInstance.post(API_ROUTES.tanks.delete.multiple(), {
+        event_ids: selectedRows.map((row) => row.id),
+        soft_delete: true,
+      });
       const result = response.data;
       if (!result.success) throw new Error(result?.message || "فشل في حذف الحدث");
       showSuccess(result.message || "تم حذف البيانات بنجاح", 3000);
@@ -302,69 +343,75 @@ export default function ShowDataGrid({ date, location, rows1 }) {
     });
   };
 
-  // ── Shared cell styles ───────────────────────────────────────────────────────
-  const headCell = {
+  // ── Table header cells ───────────────────────────────────────────────────────
+  const headCellSx = {
     fontWeight: 600,
     fontSize: "0.82rem",
     color: "text.secondary",
-    bgcolor: "grey.100",
+    bgcolor: "grey.50",
     borderBottom: "1px solid",
     borderColor: "divider",
-    whiteSpace: "nowrap",
     py: dense ? 1 : 1.5,
     px: 2,
+    whiteSpace: "nowrap",
   };
 
-  const bodyCell = {
+  const bodyCellSx = {
+    py: dense ? 0.8 : 1.4,
+    px: 2,
     borderBottom: "1px solid",
     borderColor: "divider",
     fontSize: "0.84rem",
-    py: dense ? 0.8 : 1.4,
-    px: 2,
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <>
-      <Paper
-        variant="outlined"
-        sx={{ borderRadius: 2, overflow: "hidden", direction: "ltr" }}
-      >
+      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: "hidden" }}>
+
+        {/* ── Filter tabs row ── */}
+        <Box sx={{ px: 3, pt: 2, pb: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+          <FilterTabs rows={rows} activeFilter={activeFilter} onChange={(f) => { setActiveFilter(f); setPage(0); }} />
+        </Box>
+
+        {/* ── Search + actions row ── */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+          <IconButton size="small" sx={{ color: "text.secondary" }}>
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+
+          <TextField
+            size="small"
+            placeholder="...Search"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <SearchIcon fontSize="small" sx={{ color: "text.disabled" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <Select
+              displayEmpty
+              value=""
+              renderValue={() => <Typography variant="body2" color="text.secondary">Role</Typography>}
+              sx={{ borderRadius: 2 }}
+            >
+              <MenuItem value="">الكل</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* ── Table ── */}
         <TableContainer>
-          <Table size={dense ? "small" : "medium"} sx={{ direction: "rtl" }}>
-            {/* ── Header ── */}
+          <Table size={dense ? "small" : "medium"}>
             <TableHead>
               <TableRow>
-                {/* ⋮ actions col */}
-                <TableCell sx={{ ...headCell, width: 44, px: 1 }} />
-
-                {/* التاريخ */}
-                <TableCell sx={{ ...headCell, textAlign: "left" }}>
-                  التاريخ
-                </TableCell>
-
-                {/* الوقت */}
-                <TableCell sx={{ ...headCell, textAlign: "left" }}>
-                  الوقت
-                </TableCell>
-
-                {/* الموقع */}
-                <TableCell sx={{ ...headCell, textAlign: "left" }}>
-                  الموقع
-                </TableCell>
-
-                {/* الوصف — flex */}
-                <TableCell sx={{ ...headCell, textAlign: "left", minWidth: 260 }}>
-                  الوصف
-                </TableCell>
-
-                {/* الحالة */}
-                <TableCell sx={{ ...headCell, textAlign: "right" }}>
-                  الحالة
-                </TableCell>
-
-                {/* Checkbox */}
-                <TableCell padding="checkbox" sx={{ ...headCell }}>
+                <TableCell padding="checkbox" sx={{ ...headCellSx, bgcolor: "grey.50" }}>
                   <Checkbox
                     size="small"
                     indeterminate={somePageSelected}
@@ -372,10 +419,15 @@ export default function ShowDataGrid({ date, location, rows1 }) {
                     onChange={toggleAll}
                   />
                 </TableCell>
+                <TableCell sx={{ ...headCellSx, textAlign: "right" }}>التاريخ ↑</TableCell>
+                <TableCell sx={{ ...headCellSx, textAlign: "center" }}>الوقت</TableCell>
+                <TableCell sx={{ ...headCellSx, textAlign: "center" }}>الموقع</TableCell>
+                <TableCell sx={{ ...headCellSx, textAlign: "right", minWidth: 220 }}>الوصف</TableCell>
+                <TableCell sx={{ ...headCellSx, textAlign: "center" }}>الحالة</TableCell>
+                <TableCell sx={{ ...headCellSx, width: 48 }} />
               </TableRow>
             </TableHead>
 
-            {/* ── Body ── */}
             <TableBody>
               {pagedRows.length === 0 ? (
                 <TableRow>
@@ -392,59 +444,49 @@ export default function ShowDataGrid({ date, location, rows1 }) {
                       hover
                       selected={selected}
                       sx={{
-                        "&.Mui-selected": { bgcolor: "#f0f4ff" },
-                        "&.Mui-selected:hover": { bgcolor: "#e8eeff" },
+                        "&.Mui-selected": { bgcolor: "action.selected" },
+                        "&.Mui-selected:hover": { bgcolor: "action.hover" },
                         transition: "background 0.15s",
                       }}
                     >
-                      {/* ⋮ */}
-                      <TableCell sx={{ ...bodyCell, px: 0.5, width: 44 }}>
+                      {/* Checkbox */}
+                      <TableCell padding="checkbox" sx={bodyCellSx}>
+                        <Checkbox size="small" checked={selected} onChange={() => toggleRow(row)} />
+                      </TableCell>
+
+                      {/* Date */}
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "right", fontWeight: 500 }}>
+                        {row.date1 || "—"}
+                      </TableCell>
+
+                      {/* Time */}
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center", color: "text.secondary" }}>
+                        {row.time1 || "—"}
+                      </TableCell>
+
+                      {/* Location */}
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center", fontWeight: 600 }}>
+                        {row.location || "—"}
+                      </TableCell>
+
+                      {/* Description */}
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "right", maxWidth: 320 }}>
+                        <DescriptionCell row={row} />
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center" }}>
+                        <StatusChip row={row} />
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell sx={{ ...bodyCellSx, textAlign: "center", px: 0.5 }}>
                         <RowActionsMenu
                           row={row}
                           selectedRows={selectedRows}
                           onDetail={handleOpenDetail}
                           onEdit={handleEditClick}
                           onDelete={handleOpenDelete}
-                        />
-                      </TableCell>
-
-                      {/* التاريخ */}
-                      <TableCell
-                        sx={{ ...bodyCell, fontWeight: 600, color: "#37474f" }}
-                      >
-                        {row.date1 || "—"}
-                      </TableCell>
-
-                      {/* الوقت */}
-                      <TableCell
-                        sx={{ ...bodyCell, fontWeight: 600, color: "#37474f" }}
-                      >
-                        {row.time1 || "—"}
-                      </TableCell>
-
-                      {/* الموقع */}
-                      <TableCell
-                        sx={{ ...bodyCell, fontWeight: 700, color: "#1a237e" }}
-                      >
-                        {row.location || "—"}
-                      </TableCell>
-
-                      {/* الوصف */}
-                      <TableCell sx={{ ...bodyCell }}>
-                        <DescriptionCell row={row} />
-                      </TableCell>
-
-                      {/* الحالة */}
-                      <TableCell sx={{ ...bodyCell, textAlign: "right" }}>
-                        <StatusText row={row} />
-                      </TableCell>
-
-                      {/* Checkbox */}
-                      <TableCell padding="checkbox" sx={bodyCell}>
-                        <Checkbox
-                          size="small"
-                          checked={selected}
-                          onChange={() => toggleRow(row)}
                         />
                       </TableCell>
                     </TableRow>
@@ -455,62 +497,38 @@ export default function ShowDataGrid({ date, location, rows1 }) {
           </Table>
         </TableContainer>
 
-        {/* ── Footer: pagination + dense toggle ── */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            px: 2,
-            py: 0.5,
-            borderTop: "1px solid",
-            borderColor: "divider",
-            direction: "rtl",
-          }}
-        >
+        {/* ── Pagination footer ── */}
+        <Box sx={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          px: 2, py: 0.5, borderTop: "1px solid", borderColor: "divider",
+        }}>
+          <FormControlLabel
+            control={<Switch size="small" checked={dense} onChange={(e) => setDense(e.target.checked)} />}
+            label={<Typography variant="body2" color="text.secondary">Dense</Typography>}
+            labelPlacement="start"
+            sx={{ m: 0, gap: 1 }}
+          />
           <TablePagination
             component="div"
-            count={rows.length}
+            count={filteredRows.length}
             page={page}
             onPageChange={(_, p) => setPage(p)}
             rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(e) => {
-              setRowsPerPage(parseInt(e.target.value, 10));
-              setPage(0);
-            }}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
             rowsPerPageOptions={[5, 8, 10, 25]}
             labelRowsPerPage="عدد الصفوف في الصفحة:"
-            labelDisplayedRows={({ from, to, count }) =>
-              `${from}-${to} من ${count}`
-            }
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} من ${count}`}
             sx={{
-              direction: "rtl",
-              "& .MuiTablePagination-toolbar": { direction: "rtl", pl: 0 },
+              "& .MuiTablePagination-toolbar": { direction: "rtl" },
               "& .MuiTablePagination-selectLabel": { fontFamily: "inherit" },
               "& .MuiTablePagination-displayedRows": { fontFamily: "inherit" },
             }}
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                size="small"
-                checked={dense}
-                onChange={(e) => setDense(e.target.checked)}
-              />
-            }
-            label={
-              <Typography variant="body2" color="text.secondary">
-                Dense
-              </Typography>
-            }
-            labelPlacement="start"
-            sx={{ m: 0, gap: 1 }}
           />
         </Box>
       </Paper>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          Detail Dialog
+          Detail Dialog — unchanged
       ══════════════════════════════════════════════════════════════════════ */}
       <Dialog
         open={openDetail}
@@ -520,86 +538,33 @@ export default function ShowDataGrid({ date, location, rows1 }) {
         TransitionComponent={Fade}
         transitionDuration={300}
         PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: "0 10px 40px rgba(0,0,0,0.15)",
-            overflow: "hidden",
-            minHeight: 400,
-          },
+          sx: { borderRadius: 3, boxShadow: "0 10px 40px rgba(0,0,0,0.15)", overflow: "hidden", minHeight: 400 },
         }}
       >
         <DialogTitle
           sx={{
-            textAlign: "center",
-            bgcolor: "primary.main",
-            color: "white",
-            py: 2.5,
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: 0,
-              left: "10%",
-              width: "80%",
-              height: "3px",
-              bgcolor: "rgba(255,255,255,0.3)",
-              borderRadius: "3px",
-            },
+            textAlign: "center", bgcolor: "primary.main", color: "white", py: 2.5, position: "relative",
+            "&::after": { content: '""', position: "absolute", bottom: 0, left: "10%", width: "80%", height: "3px", bgcolor: "rgba(255,255,255,0.3)", borderRadius: "3px" },
           }}
         >
           <Box display="flex" alignItems="center" justifyContent="center" gap={1.5}>
-            <SvgColor
-              src="/assets/icons/files/ic_document.svg"
-              width={28}
-              height={28}
-              sx={{ opacity: 0.9 }}
-            />
-            <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>
-              تفاصيل الصفوف المحددة
-            </Typography>
+            <SvgColor src="/assets/icons/files/ic_document.svg" width={28} height={28} sx={{ opacity: 0.9 }} />
+            <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>تفاصيل الصفوف المحددة</Typography>
           </Box>
         </DialogTitle>
 
-        <DialogContent
-          dividers
-          sx={{
-            p: 3,
-            bgcolor: "grey.50",
-            "&::-webkit-scrollbar": { width: "8px" },
-            "&::-webkit-scrollbar-track": { background: "#f1f1f1" },
-            "&::-webkit-scrollbar-thumb": { background: "#888", borderRadius: "4px" },
-            "&::-webkit-scrollbar-thumb:hover": { background: "#555" },
-          }}
-        >
+        <DialogContent dividers sx={{ p: 3, bgcolor: "grey.50" }}>
           {selectedRows && selectedRows.length > 0 ? (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               {selectedRows.map((row, index) => (
-                <Card
-                  key={row.id || index}
-                  variant="outlined"
-                  sx={{
-                    borderRadius: 2,
-                    borderWidth: 2,
-                    borderColor: "divider",
-                    overflow: "hidden",
+                <Card key={row.id || index} variant="outlined"
+                  sx={{ borderRadius: 2, borderWidth: 2, borderColor: "divider", overflow: "hidden",
                     transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                    "&:hover": { transform: "translateY(-2px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" },
-                  }}
-                >
+                    "&:hover": { transform: "translateY(-2px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" } }}>
                   <CardContent sx={{ p: 2.5 }}>
                     <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "primary.main",
-                          fontWeight: 700,
-                          fontSize: "0.8rem",
-                          bgcolor: "primary.lighter",
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: 1,
-                        }}
-                      >
+                      <Typography variant="caption"
+                        sx={{ color: "primary.main", fontWeight: 700, fontSize: "0.8rem", bgcolor: "primary.lighter", px: 1.5, py: 0.5, borderRadius: 1 }}>
                         #{index + 1}
                       </Typography>
                       {selectedRows.length > 1 && (
@@ -608,7 +573,6 @@ export default function ShowDataGrid({ date, location, rows1 }) {
                         </Typography>
                       )}
                     </Box>
-
                     <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
                       <Box>
                         <Box display="flex" mb={1.5} gap={2}>
@@ -624,56 +588,51 @@ export default function ShowDataGrid({ date, location, rows1 }) {
                         </Box>
                         <Box display="flex" mb={1.5} gap={2}>
                           <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                            الحالة
+                            <Box component="span" display="flex" alignItems="center" gap={0.5}>
+                              <SvgColor icon="mdi:state-machine" width={14} height={14} />
+                              الحالة
+                            </Box>
                           </Typography>
-                          <StatusText row={row} />
+                          <StatusChip row={row} />
                         </Box>
                       </Box>
                       <Box>
                         <Box display="flex" mb={1.5} gap={2}>
-                          <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                          <Typography component="span" variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>
                             <Box component="span" display="flex" alignItems="center" gap={0.5}>
                               <SvgColor src="/assets/icons/dcs/date.svg" width={14} height={14} />
                               التاريخ
                             </Box>
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {row.date1 || "غير محدد"}
-                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.date1 || "غير محدد"}</Typography>
                         </Box>
                         <Box display="flex" mb={1.5} gap={2}>
-                          <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                          <Typography component="span" variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>
                             <Box component="span" display="flex" alignItems="center" gap={0.5}>
                               <SvgColor src="/assets/icons/components/ic_clock.svg" width={14} height={14} />
                               الوقت
                             </Box>
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {row.time1 || "غير محدد"}
-                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.time1 || "غير محدد"}</Typography>
                         </Box>
                       </Box>
                     </Box>
-
                     <Box mt={2}>
-                      <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, display: "block", mb: 0.5 }}>
+                      <Typography component="span" variant="body2" sx={{ color: "text.secondary", fontWeight: 500, display: "block", mb: 0.5 }}>
                         <Box component="span" display="flex" alignItems="center" gap={0.5}>
                           <SvgColor src="/assets/icons/files/ic_document.svg" width={14} height={14} />
                           الوصف / العملية
                         </Box>
                       </Typography>
                       <Box sx={{ bgcolor: "grey.100", p: 1.5, borderRadius: 1, borderLeft: "3px solid", borderColor: "primary.main" }}>
-                        <Typography variant="body2" sx={{ color: "text.primary", lineHeight: 1.6 }}>
+                        <Typography component="span" variant="body2" sx={{ color: "text.primary", lineHeight: 1.6 }}>
                           {row.action || "لا يوجد وصف"}
                         </Typography>
                       </Box>
                     </Box>
-
                     {(row.note || row.username1 || row.shutdownReason) && (
                       <Box display="flex" mb={1.5} gap={2} mt={2}>
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                          معلومات إضافية
-                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>معلومات إضافية</Typography>
                         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                           {row.note && <Chip label={`ملاحظة: ${row.note}`} size="small" variant="outlined" sx={{ fontSize: "0.7rem" }} />}
                           {row.username1 && <Chip label={`مدخل البيانات: ${row.username1}`} size="small" variant="outlined" sx={{ fontSize: "0.7rem" }} />}
@@ -695,59 +654,36 @@ export default function ShowDataGrid({ date, location, rows1 }) {
         </DialogContent>
 
         <DialogActions sx={{ p: 2.5, gap: 1.5, bgcolor: "grey.50", borderTop: "1px solid", borderColor: "divider" }}>
-          <Button
-            variant="outlined"
-            onClick={handleCloseDetail}
+          <Button variant="outlined" onClick={handleCloseDetail}
             startIcon={<SvgColor src="/assets/icons/components/ic_close.svg" />}
-            sx={{ minWidth: 100, borderRadius: 2, borderWidth: 2, "&:hover": { borderWidth: 2, bgcolor: "action.hover" } }}
-          >
+            sx={{ minWidth: 100, borderRadius: 2, borderWidth: 2, "&:hover": { borderWidth: 2, bgcolor: "action.hover" } }}>
             إغلاق
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* ══════════════════════════════════════════════════════════════════════
-          Delete Dialog
+          Delete Dialog — unchanged
       ══════════════════════════════════════════════════════════════════════ */}
       <Dialog open={openDelete} onClose={handleCloseDelete} maxWidth="xs" fullWidth>
-        <DialogTitle
-          sx={{
-            fontWeight: 500,
-            marginBottom: "10px",
-            textAlign: "center",
-            bgcolor: "error.main",
-            color: "white",
-            py: 2.5,
-          }}
-        >
+        <DialogTitle sx={{ fontWeight: 500, marginBottom: "10px", textAlign: "center", bgcolor: "error.main", color: "white", py: 2.5 }}>
           تأكيد الحذف
         </DialogTitle>
         <DialogContent dividers>
           هل أنت متأكد من حذف هذا الحدث؟
           <Box mt={1} color="text.secondary" fontSize={13}>
             {selectedRows.map((row) => (
-              <Box key={row.id}>
-                - <strong>{row.location}</strong> | الحالة: {row.status1}
-              </Box>
+              <Box key={row.id}>- <strong>{row.location}</strong> | الحالة: {row.status1}</Box>
             ))}
           </Box>
         </DialogContent>
         <DialogContentText>
-          {deleteError && (
-            <Alert severity="error" sx={{ mt: 2, fontSize: 13 }}>
-              خطأ {deleteError}
-            </Alert>
-          )}
+          {deleteError && <Alert severity="error" sx={{ mt: 2, fontSize: 13 }}>خطأ {deleteError}</Alert>}
         </DialogContentText>
         <DialogActions>
           <Button onClick={handleCloseDelete}>إلغاء</Button>
-          <Button
-            onClick={handleConfirmDeleteMultiple}
-            color="error"
-            variant="contained"
-            disabled={deleting}
-            startIcon={<SvgColor src="/assets/icons/components/ic_delete.svg" />}
-          >
+          <Button onClick={handleConfirmDeleteMultiple} color="error" variant="contained" disabled={deleting}
+            startIcon={<SvgColor src="/assets/icons/components/ic_delete.svg" />}>
             {deleting ? "جاري الحذف..." : `حذف (${selectedRows.length})`}
           </Button>
         </DialogActions>
